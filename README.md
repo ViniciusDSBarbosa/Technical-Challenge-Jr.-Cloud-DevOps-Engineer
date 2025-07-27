@@ -3,22 +3,25 @@
 Aplicação simples para o desafio DevOps Cloud Jr.  
 Exibe **Hello World** na rota `/` e implementa **health check** na rota `/health`.
 
-# Estrutura do Projeto
-```bash
+---
+
+## Estrutura do Projeto
+```
 .
 ├── app.py                # Código da aplicação Flask
 ├── requirements.txt      # Dependências Python
 ├── Dockerfile            # Build da imagem Docker
 └── k8s/
-   ├── deployment.yaml   # Deployment Kubernetes (com probes)
-   ├── service.yaml      # Service LoadBalancer
-   └── hpa.yaml          # Horizontal Pod Autoscaler
+   ├── deployment.yaml    # Deployment Kubernetes (com probes)
+   ├── service.yaml       # Service LoadBalancer
+   └── hpa.yaml           # Horizontal Pod Autoscaler
 ```
+
 ---
 
 ## Como rodar localmente
 ```bash
-git clone https://github.com/SEU-USUARIO/Technical-Challenge-Jr.-Cloud-DevOps-Engineer.git
+git clone https://github.com/<SEU-USUARIO>/Technical-Challenge-Jr.-Cloud-DevOps-Engineer.git
 cd Technical-Challenge-Jr.-Cloud-DevOps-Engineer
 pip install -r requirements.txt
 python app.py
@@ -40,29 +43,30 @@ docker run -d -p 5000:5000 hello-world-app
 ---
 
 ## Deploy no Azure (App Service + Docker)
+
 ### 1. Criar Resource Group
 ```bash
-az group create --name hello-rg --location eastus2
+az group create --name <RESOURCE_GROUP_NAME> --location eastus2
 ```
 
-### 2. Criar Container Registry
+### 2. Criar Container Registry (ACR)
 ```bash
-az acr create --resource-group hello-rg --name helloacr --sku Basic
+az acr create --resource-group <RESOURCE_GROUP_NAME> --name <ACR_NAME> --sku Basic
 ```
 
 ### 3. Criar Cluster AKS
 ```bash
-az aks create --resource-group hello-rg --name hello-aks --node-count 2 --enable-addons monitoring --generate-ssh-keys --attach-acr helloacr
+az aks create --resource-group <RESOURCE_GROUP_NAME> --name <AKS_CLUSTER_NAME> --node-count 2 --enable-addons monitoring --generate-ssh-keys --attach-acr <ACR_NAME>
 ```
 
 ### 4. Conectar ao Cluster
 ```bash
-az aks get-credentials --resource-group hello-rg --name hello-aks
+az aks get-credentials --resource-group <RESOURCE_GROUP_NAME> --name <AKS_CLUSTER_NAME>
 ```
 
 ### 5. Fazer Build e Push da Imagem para ACR
 ```bash
-az acr build --registry helloacr --image hello-world-app:v1 .
+az acr build --registry <ACR_NAME> --image hello-world-app:v1 .
 ```
 
 ### 6. Aplicar os Manifestos Kubernetes
@@ -77,31 +81,39 @@ kubectl apply -f k8s/hpa.yaml
 kubectl get pods
 kubectl get svc hello-world-service
 ```
+
 Acesse:
+```
 http://<EXTERNAL-IP>/
 http://<EXTERNAL-IP>/health
+```
+
 ---
 
-Endpoints:
+### Endpoints:
 - `/` → Hello World
 - `/health` → {"status": "UP"}
 
 ---
+
 ## Infraestrutura como Código (IaC)
 Arquivos Terraform para:
-
 - Criar Resource Group
 - Criar AKS
 - Criar ACR
 - Fazer integração ACR ↔ AKS
 
 ---
+
 ## Comandos Terraform
-- terraform init
-- terraform plan
-- terraform apply
+```bash
+terraform init
+terraform plan
+terraform apply
+```
 
 ---
+
 ## Referências
 - [Terraform – Provedor AzureRM](https://registry.terraform.io/providers/hashicorp/azurerm/latest)
 - [Azure CLI AKS](https://learn.microsoft.com/en-us/azure/aks/kubernetes-walkthrough)
