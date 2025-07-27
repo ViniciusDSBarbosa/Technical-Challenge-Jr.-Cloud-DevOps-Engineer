@@ -3,6 +3,17 @@
 Aplicação simples para o desafio DevOps Cloud Jr.  
 Exibe **Hello World** na rota `/` e implementa **health check** na rota `/health`.
 
+# Estrutura do Projeto
+```bash
+.
+├── app.py                # Código da aplicação Flask
+├── requirements.txt      # Dependências Python
+├── Dockerfile            # Build da imagem Docker
+├── k8s/
+│   ├── deployment.yaml   # Deployment Kubernetes (com probes)
+│   ├── service.yaml      # Service LoadBalancer
+│   └── hpa.yaml          # Horizontal Pod Autoscaler
+```
 ---
 
 ## Como rodar localmente
@@ -37,104 +48,61 @@ az group create --name hello-rg --location eastus2
 ### 2. Criar Container Registry
 ```bash
 az acr create --resource-group hello-rg --name helloacr --sku Basic
-az acr login --name helloacr
 ```
 
-### 3. Push da imagem
+### 3. Criar Cluster AKS
 ```bash
-docker tag hello-world-app helloacr.azurecr.io/hello-world-app:v1
-docker push helloacr.azurecr.io/hello-world-app:v1
+az aks create --resource-group hello-rg --name hello-aks --node-count 2 --enable-addons monitoring --generate-ssh-keys --attach-acr helloacr
 ```
 
-### 4. Criar App Service Plan e Web App
+### 4. Conectar ao Cluster
 ```bash
-az appservice plan create --name hello-plan --resource-group hello-rg --sku B1 --is-linux
-az webapp create   --resource-group hello-rg   --plan hello-plan   --name hello-world-devops   --deployment-container-image-name helloacr.azurecr.io/hello-world-app:v1
+az aks get-credentials --resource-group hello-rg --name hello-aks
 ```
 
-### 5. Configurar container no WebApp
+### 5. Fazer Build e Push da Imagem para ACR
 ```bash
-az webapp config container set   --name hello-world-devops   --resource-group hello-rg   --docker-custom-image-name helloacr.azurecr.io/hello-world-app:v1   --docker-registry-server-url https://helloacr.azurecr.io
+az acr build --registry helloacr --image hello-world-app:v1 .
 ```
----
 
-## Deploy no AKS
-### Opção 1 – Usando Azure Cloud Shell (mais simples pelo portal)
-No Portal do Azure, vá para o seu cluster AKS.
-
-Clique em Conectar → escolha Cloud Shell.
-
-Ele vai abrir um terminal no próprio navegador com az e kubectl já configurados.
-
-Rode este comando para pegar as credenciais do cluster:
-
-```bash
-az aks get-credentials --resource-group <RESOURCEGROUPNAME> --name hello-aks
-```
-Isso conecta seu kubectl ao cluster.
-
-## Como enviar os arquivos YAML para o Cloud Shell
-No Cloud Shell vá até "Gerenciar arquivos":
-
-Clique nele → selecione os arquivos da pasta k8s/ (deployment.yaml, service.yaml, hpa.yaml).
-
-Eles vão parar no diretório padrão (~/).
-
-Depois, aplique os manifestos:
-
-```bash
-kubectl apply -f deployment.yaml
-kubectl apply -f service.yaml
-kubectl apply -f hpa.yaml
-```
-Para confirmar se os pods estão rodando:
-
-```bash
-kubectl get pods
-```
-Para pegar o IP público:
-```bash
-kubectl get svc hello-world-service
-```
-Quando o EXTERNAL-IP aparecer, acesse:
-
-http://<EXTERNAL-IP>/
-http://<EXTERNAL-IP>/health
-
-## Opção 2 – Localmente
-Instale o Azure CLI + kubectl no seu PC.
-
-Rode:
-
-```bash
-az login
-az aks get-credentials --resource-group <RESOURCEGROUPNAME> --name hello-aks
-kubectl apply -f k8s/
-```
-E siga os mesmos comandos para ver os pods e pegar o IP.
-
+### 6. Aplicar os Manifestos Kubernetes
 ```bash
 kubectl apply -f k8s/deployment.yaml
 kubectl apply -f k8s/service.yaml
 kubectl apply -f k8s/hpa.yaml
 ```
 
+### 7. Verificar o Status
+```bash
+kubectl get pods
+kubectl get svc hello-world-service
+```
+Acesse:
+http://<EXTERNAL-IP>/
+http://<EXTERNAL-IP>/health
+---
+
 Endpoints:
 - `/` → Hello World
 - `/health` → {"status": "UP"}
 
 ---
+## Infraestrutura como Código (IaC)
+Arquivos Terraform para:
 
-## CI/CD com GitHub Actions
-O workflow `.github/workflows/ci-cd.yaml` faz:
-- Build da imagem
-- Push para ACR
-- Deploy no Azure App Service
+- Criar Resource Group
+- Criar AKS
+- Criar ACR
+- Fazer integração ACR ↔ AKS
 
-## Referências Terraform
+---
+## Comandos Terraform
+- terraform init
+- terraform plan
+- terraform apply
 
-- Provedor AzureRM: [Terraform Registry – AzureRM Provider]({{https://registry.terraform.io/providers/hashicorp/azurerm/latest}})
-- Grupo de Recursos: [azurerm_resource_group]({{https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group}})
-- Azure Container Registry: [azurerm_container_registry]({{https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_registry}})
-- App Service Plan: [azurerm_app_service_plan azurerm_app_service]({{https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/app_service_plan}})
-- App Service: [azurerm_app_service]({{https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/app_service}})
+---
+## Referências
+- [Terraform – Provedor AzureRM](https://registry.terraform.io/providers/hashicorp/azurerm/latest)
+- [Azure CLI AKS](https://learn.microsoft.com/en-us/azure/aks/kubernetes-walkthrough)
+- [GitHub Actions – Deploy to Azure Kubernetes Service](https://learn.microsoft.com/en-us/azure/aks/kubernetes-action)
