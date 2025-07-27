@@ -9,10 +9,10 @@ Exibe **Hello World** na rota `/` e implementa **health check** na rota `/health
 ├── app.py                # Código da aplicação Flask
 ├── requirements.txt      # Dependências Python
 ├── Dockerfile            # Build da imagem Docker
-├── k8s/
-│   ├── deployment.yaml   # Deployment Kubernetes (com probes)
-│   ├── service.yaml      # Service LoadBalancer
-│   └── hpa.yaml          # Horizontal Pod Autoscaler
+└── k8s/
+   ├── deployment.yaml   # Deployment Kubernetes (com probes)
+   ├── service.yaml      # Service LoadBalancer
+   └── hpa.yaml          # Horizontal Pod Autoscaler
 ```
 ---
 
