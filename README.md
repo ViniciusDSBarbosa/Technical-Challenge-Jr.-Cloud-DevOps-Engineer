@@ -93,16 +93,17 @@ http://<EXTERNAL-IP>/health
 ### Endpoints:
 - `/` → Hello World
 - `/health` → {"status": "UP"}
-
 ---
 
 ## Infraestrutura como Código (IaC)
-Arquivos Terraform para:
-- Criar Resource Group
-- Criar AKS
-- Criar ACR
-- Fazer integração ACR ↔ AKS
 
+Arquivos Terraform para:
+
+- Criar Resource Group
+- Criar Azure Container Registry (ACR)
+- Criar Azure Service Plan para Linux
+- Criar Azure Linux Web App com imagem Docker do ACR
+- Configurar integração entre ACR e Web App
 ---
 
 ## Comandos Terraform
@@ -117,4 +118,3 @@ terraform apply
 ## Referências
 - [Terraform – Provedor AzureRM](https://registry.terraform.io/providers/hashicorp/azurerm/latest)
 - [Azure CLI AKS](https://learn.microsoft.com/en-us/azure/aks/kubernetes-walkthrough)
-- [GitHub Actions – Deploy to Azure Kubernetes Service](https://learn.microsoft.com/en-us/azure/aks/kubernetes-action)
